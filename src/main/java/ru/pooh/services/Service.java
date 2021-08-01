@@ -5,4 +5,5 @@ import ru.pooh.Resp;
 
 public interface Service {
     Resp process(Req req);
+
 }
