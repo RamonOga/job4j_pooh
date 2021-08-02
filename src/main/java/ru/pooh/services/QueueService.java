@@ -1,8 +1,10 @@
 package ru.pooh.services;
 
+import ru.pooh.HttpResponseCodes;
 import ru.pooh.Req;
 import ru.pooh.Resp;
 
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -13,24 +15,45 @@ public class QueueService implements Service {
     @Override
     public Resp process(Req req) {
         if (req.method().equals("POST")) {
-            return get(req);
+            return post(req);
         }
         if (req.method().equals("GET")) {
             return get(req);
         }
-        return null; // throw new IllegalRequestException??
+        return new Resp(HttpResponseCodes.BadRequest.toString()
+                , HttpResponseCodes.BadRequest.get() );
     }
+
+    private Resp post(Req req) {
+        String queueName = req.text().split("/")[2];
+        String value = req.message();
+        ConcurrentLinkedQueue<String> clq = new ConcurrentLinkedQueue<>();
+        clq.offer(value);
+        ConcurrentLinkedQueue<String> tmp = queue.putIfAbsent(queueName, clq);
+        if (tmp != null) { // Здесь нужно synchronized блок?
+            tmp.add(value);
+        }
+        return new Resp(HttpResponseCodes.OK.toString()
+                ,HttpResponseCodes.OK.get());
+    }
+    // 211каб 3ий ауп поселок куравсково
 
     private Resp get(Req req) {
-        String queueName = req.text().split("/")[1];
-        String value = req.message();
-        ConcurrentLinkedQueue<String> clq = new ConcurrentLinkedQueue<String>();
-        clq.offer(value);
-        queue.putIfAbsent(queueName, clq);
-        return new Resp("", -1);
-    }
+        String queueName = req.text().split("/")[2];
+        ConcurrentLinkedQueue<String> tmp = queue.get(queueName);
+        if (tmp == null) {
+            return new Resp(HttpResponseCodes.BadRequest.toString()
+                    , HttpResponseCodes.BadRequest.get());
+        }
 
-    private Resp post() {
-        return null;
+        String rsl = tmp.poll();
+
+        if (rsl == null) {
+            return new Resp(HttpResponseCodes.InternalServerError.toString(),
+                    HttpResponseCodes.InternalServerError.get());
+        }
+
+        return new Resp(rsl
+                , HttpResponseCodes.OK.get());
     }
 }

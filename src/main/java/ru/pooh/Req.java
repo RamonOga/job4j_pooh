@@ -15,16 +15,14 @@ public class Req {
     }
 
     public static Req of(String content) {
-        System.out.println(content);
+        //System.out.println(content);
         String[] lines = content.split(System.lineSeparator());
         String method = lines[0].split(" ")[0];
         String mode = lines[0].split(" ")[1].split("/")[1];
         String text = lines[0].split(" ")[1];
         String message = lines[lines.length - 1];
-
-
         var rsl = new Req(method, mode, text, message);
-        System.out.println(rsl);
+        System.out.println(rsl.toString());
         return rsl;
     }
 
