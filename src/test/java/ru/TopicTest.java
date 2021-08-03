@@ -34,6 +34,40 @@ public class TopicTest {
         Assert.assertEquals(message, getResp.text());
     }
 
+    @Test
+    public void whenRespMethodTestQueueModeManyResponses() {
+        String message1 = "temperature=18";
+        String message2 = "Stream API";
+        String message3 = "temperature=18";
+        String postText1 =  textPost("/queue/weather", message1);
+        String postText2 =  textPost("/queue/java", message2);
+        String postText3 =  textPost("/queue/java", message3);
+        String getText1=  textGet("/queue/weather", "1");
+        String getText2=  textGet("/queue/java", "1");
+        String getText3=  textGet("/queue/java", "1");
+
+        TopicService ts = new TopicService();
+
+        Req postReq1 = Req.of(postText1);
+        Req postReq2 = Req.of(postText2);
+        Req postReq3 = Req.of(postText3);
+        Req getReq1 = Req.of(getText1);
+        Req getReq2 = Req.of(getText2);
+        Req getReq3 = Req.of(getText3);
+        ts.process(postReq1);
+        ts.process(postReq2);
+        ts.process(postReq3);
+        Resp getResp1 = ts.process(getReq1);
+        Resp getResp2 = ts.process(getReq2);
+        Resp getResp3 = ts.process(getReq3);
+        Assert.assertEquals(200, getResp1.status());
+        Assert.assertEquals(message1, getResp1.text());
+        Assert.assertEquals(200, getResp2.status());
+        Assert.assertEquals(message2, getResp2.text());
+        Assert.assertEquals(200, getResp3.status());
+        Assert.assertEquals(message3, getResp3.text());
+    }
+
     private String textPost(String query, String message) {
         String ln = System.lineSeparator();
         return  "POST " + query + " HTTP/1.1" + ln +
