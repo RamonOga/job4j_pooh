@@ -36,7 +36,6 @@ public class QueueService implements Service {
         return new Resp(HttpResponseCodes.OK.toString()
                 ,HttpResponseCodes.OK.get());
     }
-    // 211каб 3ий ауп поселок куравсково
 
     private Resp get(Req req) {
         String queueName = req.text().split("/")[2];
@@ -46,14 +45,14 @@ public class QueueService implements Service {
                     , HttpResponseCodes.BadRequest.get());
         }
 
-        String rsl = tmp.poll();
+        String message = tmp.poll();
 
-        if (rsl == null) {
+        if (message == null) {
             return new Resp(HttpResponseCodes.InternalServerError.toString(),
                     HttpResponseCodes.InternalServerError.get());
         }
 
-        return new Resp(rsl
+        return new Resp(message
                 , HttpResponseCodes.OK.get());
     }
 }
