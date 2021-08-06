@@ -27,6 +27,7 @@ public class QueueService implements Service {
     private Resp post(Req req) {
         String queueName = req.text().split("/")[2];
         String value = req.message();
+
         ConcurrentLinkedQueue<String> clq = new ConcurrentLinkedQueue<>();
         clq.offer(value);
         ConcurrentLinkedQueue<String> tmp = queue.putIfAbsent(queueName, clq);

@@ -28,10 +28,11 @@ public class TopicService implements Service {
     private Resp post(Req req) {
         String topicName = req.text().split("/")[2];
         String value = req.message();
+
         ConcurrentLinkedQueue<String> clq = new ConcurrentLinkedQueue<>();
         clq.offer(value);
         ConcurrentLinkedQueue<String> tmp = topic.putIfAbsent(topicName, clq);
-        if (tmp != null) { // Здесь нужно synchronized блок?
+        if (tmp != null) { // Здесь нужен synchronized блок?
             tmp.add(value);
         }
         fillUsersQueues(topicName, value);
@@ -43,25 +44,23 @@ public class TopicService implements Service {
         String topicName = req.text().split("/")[2];
         int id = Integer.parseInt(req.text().split("/")[3]);
 
-        Map<String, ConcurrentLinkedQueue<String>> userMap = users.get(id);
+        if (topic.get(topicName) == null) {
+            return new Resp(HttpResponseCodes.BadRequest.toString(),
+                    HttpResponseCodes.BadRequest.get());
+        }
+
+        Map<String, ConcurrentLinkedQueue<String>> userMap = users.putIfAbsent(id, new ConcurrentHashMap<>());
+
         if (userMap == null) {
-            users.put(id, new ConcurrentHashMap<String, ConcurrentLinkedQueue<String>>());
             userMap = users.get(id);
         }
-        ConcurrentLinkedQueue<String> userTopicQueueFromYourMap = userMap.get(topicName);
+        ConcurrentLinkedQueue<String> userTopic = userMap.putIfAbsent(topicName, topic.get(topicName));
 
-        if (userTopicQueueFromYourMap == null) {
-            ConcurrentLinkedQueue<String> TopicQueueFromSharedMap
-                    = topic.get(topicName);
-            if (TopicQueueFromSharedMap == null) {
-                return new Resp(HttpResponseCodes.BadRequest.toString(),
-                        HttpResponseCodes.BadRequest.get());
-            }
-            userMap.putIfAbsent(topicName, TopicQueueFromSharedMap);
-            userTopicQueueFromYourMap = userMap.get(topicName);
+        if (userTopic == null) {
+            userTopic = userMap.get(topicName);
         }
 
-        String message = userTopicQueueFromYourMap.poll();
+        String message = userTopic.poll();
 
         if (message == null) {
             return new Resp(HttpResponseCodes.InternalServerError.toString(),
